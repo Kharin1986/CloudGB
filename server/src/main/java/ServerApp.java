@@ -7,17 +7,17 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 public class ServerApp {
-    private void run() throws Exception {
-        EventLoopGroup bossGroup = new NioEventLoopGroup(); // создаем пулы потоков
+    public void run() throws Exception {
+        EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
+                    .childHandler(new ChannelInitializer<SocketChannel>() { // (4)
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new ProtocolHandler());
+                            ch.pipeline().addLast(new ProtoHandler()); //  добавили ProtoHandler в конвейер
                         }
                     });
             ChannelFuture f = b.bind(8189).sync();
