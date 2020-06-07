@@ -26,21 +26,21 @@ public class Network {
         return currentChannel;
     }
 
-    public void start(CountDownLatch countDownLatch) {
+    public void start(CountDownLatch connectionOpened) {
         EventLoopGroup group = new NioEventLoopGroup();
         try {
             Bootstrap clientBootstrap = new Bootstrap();
             clientBootstrap.group(group)
                     .channel(NioSocketChannel.class)
-                    .remoteAddress(new InetSocketAddress("localhost", 8189)) // адрес сервера
+                    .remoteAddress(new InetSocketAddress("localhost", 8189))
                     .handler(new ChannelInitializer<SocketChannel>() {
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
-                       //     socketChannel.pipeline().addLast();
+                            socketChannel.pipeline().addLast(new ProtoHandler("client_storage", new ClientCommandReceiver()));
                             currentChannel = socketChannel;
                         }
                     });
             ChannelFuture channelFuture = clientBootstrap.connect().sync();
-            countDownLatch.countDown();
+            connectionOpened.countDown();
             channelFuture.channel().closeFuture().sync();
         } catch (Exception e) {
             e.printStackTrace();
@@ -57,4 +57,3 @@ public class Network {
         currentChannel.close();
     }
 }
-

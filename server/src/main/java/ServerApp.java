@@ -8,22 +8,25 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 public class ServerApp {
     public void run() throws Exception {
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        EventLoopGroup bossGroup = new NioEventLoopGroup();// пул потоков, ожидающий клиентов
+        EventLoopGroup workerGroup = new NioEventLoopGroup(); // пул потоков, сложные задачи
         try {
-            ServerBootstrap b = new ServerBootstrap();
+            ServerBootstrap b = new ServerBootstrap(); //настройки сервера
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .childHandler(new ChannelInitializer<SocketChannel>() { // (4)
                         @Override
-                        public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new ProtoHandler()); //  добавили ProtoHandler в конвейер
+                        public void initChannel(SocketChannel ch) throws Exception { // когда к нам кто-то подключается, мы инициализаируем его канал
+                            ch.pipeline().addLast(
+                                    new AuthHandler(),
+                                    new ProtoHandler("server_repository", new ServerCommandReceiver()));
                         }
                     });
-            ChannelFuture f = b.bind(8189).sync();
-            f.channel().closeFuture().sync();
+            ChannelFuture f = b.bind(8189).sync(); // future - информация о работе канала
+            //sync запускает подключение и выдает объект типа ChannelFuture, работает типа await - пока сервер работает, мы дальше не идем
+            f.channel().closeFuture().sync(); // ждем завершения работы сервера
         } finally {
-            workerGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully(); // когда завершилась работа сервера освобождаем пулы потоков
             bossGroup.shutdownGracefully();
         }
     }
